@@ -1,0 +1,25 @@
+{
+  "name": "copilot-studio-chat-pcf-control-with-voice",
+  "version": "1.2.8",
+  "description": "A Power Apps Component Framework (PCF) control that enables rich chat experiences with Microsoft Copilot Studio, featuring voice input/output and adaptive card support.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/Copilot-Studio-Chat-PCF-Control-with-Voice.git"
+  },
+  "homepage": "https://github.com/microsoft/Copilot-Studio-Chat-PCF-Control-with-Voice",
+  "bugs": {
+    "url": "https://github.com/microsoft/Copilot-Studio-Chat-PCF-Control-with-Voice/issues"
+  },
+  "keywords": [
+    "power-apps",
+    "pcf",
+    "copilot-studio",
+    "chat",
+    "voice",
+    "speech-to-text",
+    "text-to-speech",
+    "microsoft"
+  ],
+  "author": "Microsoft Corporation",
+  "license": "MIT"
+}
