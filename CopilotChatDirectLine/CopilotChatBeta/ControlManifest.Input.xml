@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="Copilot" constructor="CopilotStudioChatBeta" version="1.2.8" display-name-key="Copilot Studio Chat Beta" description-key="Beta Testing - Latest features including Driving Mode, Adaptive Cards, Voice (Azure + OpenAI), and Attachments" control-type="standard" >
+    <!--external-service-usage node declares whether this 3rd party PCF control is using external service or not, if yes, this control will be considered as premium and require corresponding license, Default is false -->
+    <external-service-usage enabled="false" />
+    
+    <!-- Direct Line Configuration -->
+    <property name="DirectLineSecret" display-name-key="DirectLineSecret" description-key="Direct Line Secret from Copilot Studio" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="DirectLineEndpoint" display-name-key="DirectLineEndpoint" description-key="Direct Line Endpoint URL" of-type="SingleLine.Text" usage="input" required="false" default-value="https://directline.botframework.com/v3/directline" />
+    
+    <!-- Azure Speech Service Configuration -->
+    <property name="SpeechKey" display-name-key="SpeechKey" description-key="Azure Speech Service Key" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="SpeechRegion" display-name-key="SpeechRegion" description-key="Azure Speech Service Region (e.g., eastus)" of-type="SingleLine.Text" usage="input" required="false" default-value="eastus" />
+    
+    <!-- Azure OpenAI TTS Configuration -->
+    <property name="OpenAIEndpoint" display-name-key="OpenAIEndpoint" description-key="Azure OpenAI Endpoint for TTS (e.g., https://your-resource.openai.azure.com/)" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="OpenAIKey" display-name-key="OpenAIKey" description-key="Azure OpenAI API Key for TTS" of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="OpenAIDeployment" display-name-key="OpenAIDeployment" description-key="Azure OpenAI TTS Deployment Name (default: tts)" of-type="SingleLine.Text" usage="input" required="false" default-value="tts" />
+    
+    <!-- UI Configuration -->
+    <property name="ModalTitle" display-name-key="ModalTitle" description-key="Title displayed on the Driving Mode modal (default: Copilot Assistant)" of-type="SingleLine.Text" usage="input" required="false" default-value="Copilot Assistant" />
+    <property name="EnableAttachments" display-name-key="EnableAttachments" description-key="Enable file and photo attachments (default: No)" of-type="TwoOptions" usage="input" required="false" default-value="false" />
+    <property name="AttachmentIcon" display-name-key="AttachmentIcon" description-key="Icon style for attachment button (paperclip, camera, document, plus)" of-type="SingleLine.Text" usage="input" required="false" default-value="paperclip" />
+    
+    <!-- Output -->
+    <property name="Version" display-name-key="Version" description-key="Control Version (read-only)" of-type="SingleLine.Text" usage="output" />
+    
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="18.3.1" />
+    </resources>
+  </control>
+</manifest>

@@ -1,0 +1,36 @@
+{
+  "name": "copilot-studio-chat-pcf",
+  "version": "1.2.8",
+  "description": "Power Apps Component Framework control for Copilot Studio Chat with Voice support",
+  "scripts": {
+    "build": "pcf-scripts build",
+    "clean": "pcf-scripts clean",
+    "lint": "pcf-scripts lint",
+    "lint:fix": "pcf-scripts lint fix",
+    "rebuild": "pcf-scripts rebuild",
+    "start": "pcf-scripts start",
+    "start:watch": "pcf-scripts start watch",
+    "refreshTypes": "pcf-scripts refreshTypes"
+  },
+  "dependencies": {
+    "adaptivecards": "^3.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "@microsoft/eslint-plugin-power-apps": "^0.2.51",
+    "@types/node": "^22.15.3",
+    "@types/powerapps-component-framework": "^1.3.16",
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.7",
+    "eslint-plugin-promise": "^7.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "globals": "^15.15.0",
+    "pcf-scripts": "^1",
+    "pcf-start": "^1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.31.0"
+  }
+}
