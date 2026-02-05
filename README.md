@@ -19,7 +19,10 @@ A Power Apps Component Framework (PCF) control that enables rich chat experience
 
 ## Screenshots
 
-<!-- Add screenshots here -->
+<img width="588" height="813" alt="image" src="https://github.com/user-attachments/assets/c01e38c2-f3c8-46d6-8859-cc10bea05ae6" />
+<img width="498" height="754" alt="image" src="https://github.com/user-attachments/assets/0b55532a-b4ec-4fc5-bafe-c08df28c0dd4" />
+<img width="494" height="746" alt="image" src="https://github.com/user-attachments/assets/c7a195d8-e84a-433c-b481-071d57fe390c" />
+
 
 ## Prerequisites
 
