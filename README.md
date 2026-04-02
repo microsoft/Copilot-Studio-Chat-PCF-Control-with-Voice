@@ -21,10 +21,7 @@ A Power Apps Component Framework (PCF) control that enables rich chat experience
 
 ## Screenshots
 
-<img width="588" height="813" alt="image" src="https://github.com/user-attachments/assets/c01e38c2-f3c8-46d6-8859-cc10bea05ae6" />
-<img width="498" height="754" alt="image" src="https://github.com/user-attachments/assets/0b55532a-b4ec-4fc5-bafe-c08df28c0dd4" />
-<img width="494" height="746" alt="image" src="https://github.com/user-attachments/assets/c7a195d8-e84a-433c-b481-071d57fe390c" />
-
+<!-- Add screenshots here -->
 
 ## Prerequisites
 
@@ -79,82 +76,56 @@ pac pcf push --publisher-prefix YOUR_PREFIX
 3. Go to **Insert** > **Get more components** > **Code components**
 4. Select **Copilot Studio Chat** control
 5. Add control to your screen
-6. **Important: Set layout properties** (see below)
-7. Configure properties:
+6. Configure properties:
    - **DirectLineSecret**: Your Direct Line secret
    - **DirectLineEndpoint**: Leave default (`https://directline.botframework.com/v3/directline`)
 
-### 📐 Recommended Layout Settings
+For detailed setup instructions, see the [Setup Guide](SETUP_GUIDE.md).
 
-For optimal display, configure these layout properties on the control:
+## Azure Speech Service (Optional)
 
-| Property | Setting |
-|----------|---------|
-| **Flexible height** | ✅ On |
-| **Align in container** | Custom → **Stretch** |
+For premium neural voices instead of browser voices, you have two options:
 
-This ensures the chat control:
-- Fills its container properly
-- Responds to dynamic content height (messages, cards)
-- Works correctly in responsive layouts
+### Option A: Speech Proxy with Managed Identity (Recommended)
 
-For detailed deployment instructions, see the [Deployment Guide](CopilotChatDirectLine/DEPLOYMENT.md).
+Use the included Azure Function proxy when API key access is disabled or you want to use managed identity. The proxy handles authentication server-side via `DefaultAzureCredential`.
 
-## Deploy Azure Resources (Optional)
+1. Deploy the speech proxy Azure Function from `azure-functions/speech-proxy/`
+2. Enable system-assigned managed identity on the Function App
+3. Assign **Cognitive Services User** role on your Azure Speech resource
+4. Assign **Cognitive Services User** role on your Azure OpenAI resource (if using OpenAI TTS)
+5. Configure the Function App settings:
+   - `AZURE_SPEECH_REGION`: Your region code (e.g., `eastus`)
+   - `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint (if using OpenAI TTS)
+   - `AZURE_OPENAI_DEPLOYMENT`: TTS deployment name (default: `tts`)
+   - `FUNCTION_API_KEY`: A secret key to authenticate client requests
+6. Configure the PCF control properties:
+   - **SpeechProxyEndpoint**: Your Function App URL (e.g., `https://func-speech-proxy.azurewebsites.net`)
+   - **SpeechProxyApiKey**: The `FUNCTION_API_KEY` value you set above
 
-The control supports Azure Speech Services (for premium neural voices) and Azure OpenAI (for natural-sounding TTS). You can provision both resources with a single click:
+### Option B: Direct API Keys
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2FCopilot-Studio-Chat-PCF-Control-with-Voice%2Fmain%2Fazuredeploy.json)
-
-### What Gets Deployed
-
-| Resource | Type | Purpose |
-|----------|------|---------|
-| `{prefix}-speech` | Azure Speech Services | Premium neural voice TTS and speech-to-text |
-| `{prefix}-openai` | Azure OpenAI | Natural OpenAI TTS voices (echo, alloy, nova, etc.) |
-| Model deployment | OpenAI model (gpt-4o-mini default) | Language model for TTS and chat capabilities |
-
-### Deployment Steps
-
-1. Click the **Deploy to Azure** button above
-2. Sign in to your Azure subscription
-3. Fill in the parameters:
-   - **Resource Prefix**: A unique name prefix (e.g., `contoso`) — creates `contoso-speech` and `contoso-openai`
-   - **Location**: Region for Speech Services (e.g., `eastus`)
-   - **OpenAI Location**: Region for Azure OpenAI (e.g., `eastus2`)
-   - **OpenAI Model**: Choose model (default: `gpt-4o-mini`)
-   - **Speech Service SKU**: `F0` (free tier) or `S0` (standard)
-4. Click **Review + Create**, then **Create**
-5. Wait for deployment to complete (~2-3 minutes)
-6. Go to **Outputs** tab and copy these values into your Dynamics 365 environment variables:
-
-| Output | Environment Variable |
-|--------|---------------------|
-| `speechKey` | `bw_SpeechKey` |
-| `speechRegion` | `bw_SpeechRegion` |
-| `openAIEndpoint` | `bw_OpenAIEndpoint` |
-| `openAIKey` | `bw_OpenAIKey` |
-| `openAIDeploymentName` | `bw_OpenAIDeployment` |
-
-### Manual Setup
-
-If you prefer to create resources manually:
-
-#### Azure Speech Service
+If your Azure resources have API key access enabled:
 
 1. Create an Azure Speech Service resource in the [Azure Portal](https://portal.azure.com)
 2. Copy your **KEY** and **REGION** from Keys and Endpoint
-3. Set environment variables:
-   - **bw_SpeechKey**: Your Speech Service key
-   - **bw_SpeechRegion**: Your region code (e.g., `eastus`)
+3. Configure the control properties:
+   - **SpeechKey**: Your Speech Service key
+   - **SpeechRegion**: Your region code (e.g., `eastus`)
 
-#### Azure OpenAI TTS
+## Azure OpenAI TTS (Optional)
 
-1. Create an Azure OpenAI resource with a model deployed
-2. Set environment variables:
-   - **bw_OpenAIEndpoint**: Your Azure OpenAI endpoint URL
-   - **bw_OpenAIKey**: Your Azure OpenAI API key
-   - **bw_OpenAIDeployment**: Deployment name (default: `gpt-4o-mini`)
+For natural-sounding OpenAI voices (English only):
+
+### With Speech Proxy (Recommended)
+If using the speech proxy (Option A above), OpenAI TTS is handled automatically — the proxy routes to the OpenAI endpoint configured in its environment variables. No additional PCF control properties are needed.
+
+### With Direct API Keys
+1. Create an Azure OpenAI resource with TTS model deployed
+2. Configure the control properties:
+   - **OpenAIEndpoint**: Your Azure OpenAI endpoint URL
+   - **OpenAIKey**: Your Azure OpenAI API key
+   - **OpenAIDeployment**: Deployment name (default: `tts`)
 
 ### Available Voice Profiles (English)
 
@@ -245,6 +216,7 @@ The following control properties contain sensitive credentials that are visible 
 | `DirectLineSecret` | Direct Line Secret from Copilot Studio |
 | `SpeechKey` | Azure Speech Service subscription key |
 | `OpenAIKey` | Azure OpenAI API key |
+| `SpeechProxyApiKey` | API key for the speech proxy Azure Function |
 
 ### Recommendations for Production
 
@@ -254,15 +226,97 @@ The following control properties contain sensitive credentials that are visible 
 
 > ⚠️ Property descriptions now include 🔐 SENSITIVE warnings to remind administrators.
 
+## Environment Variables Reference
+
+The **D365MobileCanvasTemplate** solution ships with Power Platform Environment Variables for configuration. After importing, set values for your environment in the solution's Environment Variables section.
+
+### Required — Core
+
+| Variable | Description |
+|----------|-------------|
+| `bw_DirectLineSecret` | 🔐 Direct Line secret from Copilot Studio (Settings → Channels → Direct Line) |
+| `bw_DirectLineEndpoint` | Direct Line endpoint URL. Default: `https://directline.botframework.com/v3/directline` |
+
+### Required — Voice (choose one option)
+
+#### Option A: Speech Proxy (Recommended — for managed identity / no API keys)
+
+| Variable | Description |
+|----------|-------------|
+| `bw_SpeechProxyEndpoint` | Azure Function speech proxy URL (e.g., `https://func-speech-proxy.azurewebsites.net`) |
+| `bw_SpeechProxyApiKey` | 🔐 API key for authenticating to the proxy (`FUNCTION_API_KEY` value) |
+| `bw_SpeechRegion` | Azure region for Speech Service (e.g., `eastus`) |
+
+#### Option B: Direct API Keys
+
+| Variable | Description |
+|----------|-------------|
+| `bw_SpeechKey` | 🔐 Azure Speech Services subscription key |
+| `bw_SpeechRegion` | Azure region (e.g., `eastus`) |
+| `bw_OpenAIEndpoint` | Azure OpenAI endpoint URL (for TTS voices) |
+| `bw_OpenAIKey` | 🔐 Azure OpenAI API key |
+| `bw_OpenAIDeployment` | TTS deployment name (default: `tts`) |
+
+### Optional — Copilot Studio Agent
+
+| Variable | Description |
+|----------|-------------|
+| `bw_CopilotStudioBotID` | Bot ID from Copilot Studio |
+| `bw_CopilotStudioTenantID` | Power Platform environment ID |
+| `bw_COPILOT_STUDIO_ENDPOINT` | Direct Line endpoint for the bot (if different from default) |
+| `bw_Copilot_Studio_Timeout` | Bot response timeout in seconds (default: `30`) |
+| `bw_PrimaryAgent` | Primary agent type: `CopilotStudio`, `AzureOpenAI`, etc. |
+| `bw_EnableA2A` | Enable agent-to-agent routing (`true` / `false`) |
+| `bw_FallbackAgent` | Fallback agent identifier |
+
+### Optional — Azure Services
+
+| Variable | Description |
+|----------|-------------|
+| `bw_DATAVERSE_URL` | Dataverse org URL (e.g., `https://org.crm.dynamics.com`) |
+| `bw_FunctionsBaseURL` | Base URL for orchestrator Azure Functions / Container Apps |
+| `bw_AzureOpenAIDeploymentName` | Azure OpenAI chat deployment name (e.g., `gpt-4o-mini`) |
+| `bw_AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (for orchestrator, not TTS) |
+
+### Optional — Vision (Camera AI)
+
+| Variable | Description |
+|----------|-------------|
+| `bw_VisionEndpoint` | Vision proxy Azure Function URL (e.g., `https://func.azurewebsites.net/api/analyze`) |
+| `bw_VisionApiKey` | 🔐 API key for vision proxy function |
+| `bw_VisionSystemPrompt` | System prompt for image analysis (customizable per industry) |
+
+### Optional — General
+
+| Variable | Description |
+|----------|-------------|
+| `bw_OrganizationName` | Display name for the organization |
+| `bw_EnvironmentType` | Environment label (`local`, `dev`, `demo`, `prod`) |
+| `bw_MaxRetries` | Max retry count for API calls |
+| `bw_TimeoutSeconds` | General timeout in seconds |
+| `bw_SalesforceAgentEndpoint` | Salesforce Agentforce endpoint (if using cross-platform agents) |
+| `bw_CUSTOM_LOGO_URL` | CDN/blob URL for custom branding logo |
+
 ## Project Structure
 
 ```
 ├── CopilotChatDirectLine/          # PCF Control Source
-│   ├── CopilotChatBeta/           # Beta version (latest features)
-│   ├── CopilotChatGA/             # General Availability (stable)
+│   ├── CopilotChatBeta/           # Beta version (v2.0.6 - latest features)
+│   ├── CopilotChatGA/             # General Availability (v1.3.3 - stable)
+│   ├── Solutions/                 # Power Platform solution project
 │   └── package.json
 │
-├── CopilotChatPCFControl/         # Solution Package
+├── azure-functions/                # Azure Function Proxies
+│   ├── speech-proxy/              # TTS proxy with managed identity (DefaultAzureCredential)
+│   │   ├── src/functions/
+│   │   │   ├── azureTts.ts        # POST /api/azure-tts - Azure Speech TTS
+│   │   │   └── openaiTts.ts       # POST /api/openai-tts - Azure OpenAI TTS
+│   │   └── src/shared.ts          # Auth + CORS helpers
+│   └── vision-proxy/              # Vision API proxy
+│
+├── TokenExchangeFunction/         # Token Exchange for Copilot Studio auth
+│
+├── CopilotChatPCFControl/         # Legacy Solution Package
 │   └── src/
 ```
 

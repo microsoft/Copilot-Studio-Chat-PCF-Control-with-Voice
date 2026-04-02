@@ -2,13 +2,13 @@
 <ImportExportXml version="9.1.0.643" SolutionPackageVersion="9.1" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SolutionManifest>
     <!-- Unique Name of Cds Solution-->
-    <UniqueName>CopilotStudioChatPCF</UniqueName>
+    <UniqueName>CopilotStudioChatGAPCF</UniqueName>
     <LocalizedNames>
       <!-- Localized Solution Name in language code -->
-      <LocalizedName description="Copilot Studio Chat PCF Control" languagecode="1033" />
+      <LocalizedName description="Copilot Studio Chat GA PCF Control" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>2.0.9</Version>
+    <Version>2.0.0</Version>
     <!-- Solution Package Type: Unmanaged(0)/Managed(1)/Both(2)-->
     <Managed>0</Managed>
     <Publisher>

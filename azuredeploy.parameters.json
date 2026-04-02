@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "2.0.0.0",
   "parameters": {
     "resourcePrefix": {
       "value": ""
@@ -9,7 +9,7 @@
       "value": "eastus"
     },
     "openAILocation": {
-      "value": "eastus2"
+      "value": "northcentralus"
     },
     "openAIModelName": {
       "value": "gpt-4o-mini"
@@ -20,8 +20,23 @@
     "openAIDeploymentCapacity": {
       "value": 10
     },
+    "ttsModelName": {
+      "value": "tts"
+    },
+    "ttsModelVersion": {
+      "value": "001"
+    },
+    "ttsDeploymentCapacity": {
+      "value": 1
+    },
     "speechServiceSku": {
       "value": "S0"
+    },
+    "functionAppSku": {
+      "value": "Y1"
+    },
+    "functionApiKey": {
+      "value": ""
     }
   }
 }

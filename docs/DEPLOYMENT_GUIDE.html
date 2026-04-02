@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outside Sales Agent — Deployment Guide</title>
+<style>
+  :root {
+    --ms-blue: #0078d4;
+    --ms-dark: #1b1b1b;
+    --ms-gray: #605e5c;
+    --ms-light: #f3f2f1;
+    --ms-border: #edebe9;
+    --ms-green: #107c10;
+    --ms-red: #d13438;
+    --ms-yellow: #ffb900;
+    --code-bg: #1e1e1e;
+    --code-fg: #d4d4d4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ms-dark);
+    line-height: 1.6;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    background: #fff;
+  }
+  h1 { font-size: 2rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--ms-dark); }
+  h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--ms-dark); border-bottom: 2px solid var(--ms-blue); padding-bottom: 0.4rem; }
+  h3 { font-size: 1.15rem; font-weight: 600; margin: 1.8rem 0 0.6rem; color: #323130; }
+  h4 { font-size: 1rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #323130; }
+  p { margin: 0.6rem 0; }
+  a { color: var(--ms-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: var(--ms-gray); font-size: 0.95rem; margin-bottom: 1.5rem; }
+  hr { border: none; border-top: 1px solid var(--ms-border); margin: 2rem 0; }
+
+  .header-bar {
+    background: linear-gradient(135deg, #0078d4, #005a9e);
+    color: #fff;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  .header-bar h1 { color: #fff; font-size: 1.8rem; }
+  .header-bar .subtitle { color: rgba(255,255,255,0.85); margin-bottom: 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 0.8rem 0 1.2rem; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.55rem 0.75rem; border: 1px solid var(--ms-border); }
+  th { background: var(--ms-light); font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) { background: #faf9f8; }
+
+  code { font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace; font-size: 0.88em; background: #f3f2f1; padding: 0.15em 0.4em; border-radius: 3px; }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.8rem 0 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  .callout { border-left: 4px solid; border-radius: 4px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.92rem; }
+  .callout-info  { border-color: var(--ms-blue); background: #f0f6ff; }
+  .callout-warn  { border-color: var(--ms-yellow); background: #fff8e1; }
+  .callout-ok    { border-color: var(--ms-green); background: #f0fff0; }
+  .callout-error { border-color: var(--ms-red); background: #fef0f0; }
+  .callout strong { display: block; margin-bottom: 0.2rem; }
+
+  .arch-diagram {
+    background: #f8f8f8;
+    border: 1px solid var(--ms-border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    display: inline-block;
+    background: var(--ms-blue);
+    color: #fff;
+    width: 1.8rem;
+    height: 1.8rem;
+    line-height: 1.8rem;
+    text-align: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  ul, ol { margin: 0.5rem 0 0.8rem 1.5rem; }
+  li { margin: 0.25rem 0; }
+
+  .toc { background: var(--ms-light); border-radius: 6px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+  .toc h3 { margin-top: 0; }
+  .toc ol { margin: 0.5rem 0 0 1.2rem; }
+  .toc li { margin: 0.3rem 0; }
+
+  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--ms-border); color: var(--ms-gray); font-size: 0.85rem; }
+
+  .deploy-section { text-align: center; margin: 1.5rem 0; }
+  .deploy-section img { height: 44px; cursor: pointer; }
+  .deploy-note { color: var(--ms-gray); font-size: 0.85rem; margin-top: 0.4rem; }
+
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.78rem; font-weight: 600; vertical-align: middle; }
+  .badge-browser { background: #e8f5e9; color: #2e7d32; }
+  .badge-cloud   { background: #e3f2fd; color: #1565c0; }
+
+  @media print {
+    body { max-width: none; padding: 0.5rem; }
+    pre { white-space: pre-wrap; }
+    .header-bar { background: #0078d4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    table { font-size: 0.8rem; }
+    pre { font-size: 0.78rem; padding: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h1>Outside Sales Agent</h1>
+  <p class="subtitle">Deployment Guide &nbsp;|&nbsp; Version 2.1 &nbsp;|&nbsp; March 2026 &nbsp;|&nbsp; Bill Whalen, Solution Engineering</p>
+</div>
+
+<div class="callout callout-ok">
+  <strong>No local tools required!</strong>
+  This entire deployment can be completed from a web browser. You do NOT need Azure CLI, VS Code, Node.js, or PowerShell installed locally. Everything uses the Azure Portal, Azure Cloud Shell (built into the Portal), and Power Platform web interfaces.
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#overview">Overview &amp; Architecture</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#step1">Step 1 &mdash; Deploy Azure Resources</a> <span class="badge badge-browser">Browser</span></li>
+    <li><a href="#step2">Step 2 &mdash; Deploy the Speech Proxy Code</a> <span class="badge badge-cloud">Cloud Shell</span></li>
+    <li><a href="#step3">Step 3 &mdash; Import Power Platform Solution</a> <span class="badge badge-browser">Browser</span></li>
+    <li><a href="#step4">Step 4 &mdash; Configure D365 Environment Variables</a> <span class="badge badge-browser">Browser</span></li>
+    <li><a href="#step5">Step 5 &mdash; Configure Copilot Studio Agent</a> <span class="badge badge-browser">Browser</span></li>
+    <li><a href="#step6">Step 6 &mdash; Launch &amp; Test</a> <span class="badge badge-browser">Browser</span></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#advanced">Advanced &mdash; CLI Alternative</a></li>
+  </ol>
+</div>
+
+<!-- ─── OVERVIEW ─── -->
+<h2 id="overview"><span class="step-num">i</span> Overview</h2>
+<p>This package deploys the <strong>Outside Sales Agent</strong> &mdash; a Dynamics 365 Canvas App with an embedded Copilot Studio Agent and a voice-enabled PCF chat control backed by Azure Speech and OpenAI TTS services.</p>
+
+<h3>What's Included</h3>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>D365MobileCanvasTemplate_1.2.0_turnkey.zip</code></td><td>Power Platform solution &mdash; Canvas App + Copilot Studio Agent + Custom Pages + Workflows + all PCF Controls</td></tr>
+  <tr><td><code>azuredeploy.json</code></td><td>ARM template &mdash; deploys the full Azure Speech Proxy stack (11 resources)</td></tr>
+  <tr><td><code>azuredeploy.parameters.json</code></td><td>ARM template parameters file</td></tr>
+  <tr><td><code>speech-proxy/</code></td><td>Azure Function source code &amp; pre-built output for the speech/TTS proxy</td></tr>
+</table>
+
+<h3>Architecture</h3>
+<div class="arch-diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  Dynamics 365 / Power Apps                          &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474;  Canvas App (D365MobileCanvasTemplate)        &#9474;  &#9474;
+&#9474;  &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  PCF Chat Control                       &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  &#8226; Voice Input  (Web Speech API/Azure)  &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  &#8226; Voice Output (Azure TTS / OpenAI)    &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  &#8226; Adaptive Cards &amp; Driving Mode       &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;                    &#9474;                                 &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474;  Copilot Studio Agent (Direct Line)           &#9474;  &#9474;
+&#9474;  &#9474;  &#8226; Dataverse Actions &amp; Workflows              &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                     &#9474; HTTPS
+        &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+        &#9474;   Azure Function        &#9474;
+        &#9474;   Speech Proxy          &#9474;
+        &#9474;   (Managed Identity)    &#9474;
+        &#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+        &#9474;         &#9474;               &#9474;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474; Azure   &#9474;  &#9474; Azure OpenAI  &#9474;
+   &#9474; Speech  &#9474;  &#9474; (TTS Model)   &#9474;
+   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+<!-- ─── PREREQUISITES ─── -->
+<h2 id="prerequisites"><span class="step-num">0</span> Prerequisites</h2>
+
+<h3>What You Need (all browser-based)</h3>
+<ul>
+  <li><strong>Azure subscription</strong> with <strong>Contributor</strong> + <strong>User Access Administrator</strong> (or Owner) on a resource group</li>
+  <li><strong>Power Apps environment</strong> with <strong>Dynamics 365 Sales</strong> (Sales Enterprise or Professional) installed</li>
+  <li><strong>System Administrator</strong> or <strong>System Customizer</strong> security role in D365</li>
+  <li>A modern web browser (Edge, Chrome, or Firefox)</li>
+</ul>
+
+<h3>Enable PCF Controls (one-time setting)</h3>
+<ol>
+  <li>Go to <a href="https://admin.powerplatform.microsoft.com" target="_blank">admin.powerplatform.microsoft.com</a></li>
+  <li>Select <strong>Environments</strong> &rarr; click your environment</li>
+  <li>Click <strong>Settings</strong> (top bar) &rarr; <strong>Features</strong></li>
+  <li>Turn <strong>ON</strong>: <em>&ldquo;Allow publishing of canvas apps with code components&rdquo;</em></li>
+  <li>Click <strong>Save</strong></li>
+</ol>
+
+<div class="callout callout-info">
+  <strong>No local installs needed!</strong> You do NOT need Azure CLI, VS Code, Node.js, PowerShell, or Power Platform CLI on your machine. Everything uses the Azure Portal, Azure Cloud Shell (built into the Portal), and web interfaces.
+</div>
+
+<!-- ─── STEP 1 ─── -->
+<h2 id="step1"><span class="step-num">1</span> Deploy Azure Resources <span class="badge badge-browser">Browser</span></h2>
+<p>Click the button below to deploy 11 Azure resources in a single click. This opens the Azure Portal with a pre-filled deployment form.</p>
+
+<h3>1.1 &nbsp; Generate an API Key</h3>
+<p>First, generate a secret API key for the speech proxy. Open <strong>Azure Cloud Shell</strong>:</p>
+<ol>
+  <li>Go to <a href="https://portal.azure.com" target="_blank">portal.azure.com</a> and sign in</li>
+  <li>Click the <strong>Cloud Shell</strong> icon (<code>&gt;_</code>) in the top navigation bar</li>
+  <li>If prompted, select <strong>Bash</strong> and click <strong>&ldquo;Create storage&rdquo;</strong> (first-time setup only)</li>
+  <li>Run this command to generate a 32-character API key:</li>
+</ol>
+<pre><code>openssl rand -hex 16</code></pre>
+<p><strong>Copy the output</strong> (e.g., <code>a3f7b2c9e1d04f8a6b5c7d9e0f1a2b3c</code>). You will use this in the next step and again in Step 4.</p>
+
+<h3>1.2 &nbsp; Deploy to Azure</h3>
+<div class="deploy-section">
+  <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fbillwhalenmsft%2FCopilot-Studio-Chat-PCF-Control-with-Voice-1%2Fpre-entra-v1.3.5%2Fazuredeploy.json" target="_blank">
+    <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure">
+  </a>
+  <div class="deploy-note">Opens the Azure Portal with a pre-configured ARM template</div>
+</div>
+
+<p>Fill in the deployment form:</p>
+<ol>
+  <li>Select or create a <strong>Resource Group</strong> (e.g., <code>rg-outside-sales-agent</code>)</li>
+  <li>Set <strong>Region</strong> to a region that supports Azure Speech (e.g., <code>East US</code>)</li>
+  <li>Enter a <strong>Resource Prefix</strong> &mdash; a unique 3&ndash;15 character lowercase string (e.g., <code>outsales</code>). This prefixes all resource names.</li>
+  <li>Paste your <strong>Function Api Key</strong> from Step 1.1</li>
+  <li>Leave other parameters as defaults (or adjust &mdash; see table below)</li>
+  <li>Click <strong>Review + Create</strong>, then <strong>Create</strong></li>
+  <li>Wait for deployment to complete (~3&ndash;5 minutes)</li>
+</ol>
+
+<h4>What Gets Created</h4>
+<table>
+  <tr><th>Resource</th><th>Type</th><th>Purpose</th></tr>
+  <tr><td><code>{prefix}-speech</code></td><td>Cognitive Services</td><td>Neural voice synthesis (STT/TTS)</td></tr>
+  <tr><td><code>{prefix}-openai</code></td><td>Azure OpenAI</td><td>TTS model + GPT-4o-mini chat model</td></tr>
+  <tr><td><code>func-speech-proxy-{prefix}</code></td><td>Function App</td><td>Speech proxy with managed identity</td></tr>
+  <tr><td><code>{prefix}-plan</code></td><td>App Service Plan</td><td>Compute (Y1 Consumption by default)</td></tr>
+  <tr><td><code>{prefix}stg</code></td><td>Storage Account</td><td>Function App runtime storage</td></tr>
+  <tr><td><code>{prefix}-insights</code></td><td>Application Insights</td><td>Monitoring &amp; APM</td></tr>
+  <tr><td><code>{prefix}-logs</code></td><td>Log Analytics</td><td>Centralized logging</td></tr>
+  <tr><td>2&times; RBAC assignments</td><td>Role Assignment</td><td>Cognitive Services User &rarr; Function App</td></tr>
+  <tr><td>2&times; Model deployments</td><td>OpenAI Deployment</td><td>GPT-4o-mini (chat) + TTS</td></tr>
+</table>
+
+<h4>Parameter Reference</h4>
+<table>
+  <tr><th>Parameter</th><th>Required</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>resourcePrefix</code></td><td><strong>Yes</strong></td><td>&mdash;</td><td>3&ndash;15 char prefix for all resource names</td></tr>
+  <tr><td><code>functionApiKey</code></td><td><strong>Yes</strong></td><td>&mdash;</td><td>The API key generated in Step 1.1</td></tr>
+  <tr><td><code>location</code></td><td>No</td><td>RG location</td><td>Region for Speech, Function App, support resources</td></tr>
+  <tr><td><code>openAILocation</code></td><td>No</td><td><code>northcentralus</code></td><td>Region for Azure OpenAI (must have TTS quota)</td></tr>
+  <tr><td><code>openAIModelName</code></td><td>No</td><td><code>gpt-4o-mini</code></td><td>Chat model</td></tr>
+  <tr><td><code>ttsModelName</code></td><td>No</td><td><code>tts</code></td><td>TTS model (<code>tts</code> or <code>tts-hd</code>)</td></tr>
+  <tr><td><code>speechServiceSku</code></td><td>No</td><td><code>S0</code></td><td><code>F0</code> (free) or <code>S0</code> (standard)</td></tr>
+  <tr><td><code>functionAppSku</code></td><td>No</td><td><code>Y1</code></td><td><code>Y1</code> (consumption), <code>B1</code>/<code>S1</code> (dedicated, Always On)</td></tr>
+</table>
+
+<h3>1.3 &nbsp; Capture the Deployment Outputs</h3>
+<p>After deployment completes:</p>
+<ol>
+  <li>In the Azure Portal, click <strong>&ldquo;Go to resource group&rdquo;</strong> (or navigate to your resource group)</li>
+  <li>Click <strong>Deployments</strong> in the left sidebar</li>
+  <li>Click the deployment name (e.g., <code>Microsoft.Template</code>)</li>
+  <li>Click the <strong>Outputs</strong> tab</li>
+  <li>Copy these values &mdash; you will need them in Step 4:</li>
+</ol>
+
+<table>
+  <tr><th>ARM Output</th><th>&rarr; Environment Variable</th><th>Example Value</th></tr>
+  <tr><td><code>speechProxyEndpoint</code></td><td><code>bw_SpeechProxyEndpoint</code></td><td><code>https://func-speech-proxy-outsales.azurewebsites.net</code></td></tr>
+  <tr><td><code>speechProxyApiKey</code></td><td><code>bw_SpeechProxyApiKey</code></td><td><em>(the key you generated in 1.1)</em></td></tr>
+  <tr><td><code>speechRegion</code></td><td><code>bw_SpeechRegion</code></td><td><code>eastus</code></td></tr>
+  <tr><td><code>openAIEndpoint</code></td><td><code>bw_OpenAIEndpoint</code></td><td><code>https://outsales-openai.openai.azure.com/</code></td></tr>
+  <tr><td><code>openAIDeploymentName</code></td><td><code>bw_OpenAIDeployment</code></td><td><code>tts</code></td></tr>
+  <tr><td><code>functionAppName</code></td><td><em>(used in Step 2)</em></td><td><code>func-speech-proxy-outsales</code></td></tr>
+  <tr><td><code>speechResourceName</code></td><td><em>(used for legacy keys)</em></td><td><code>outsales-speech</code></td></tr>
+  <tr><td><code>openAIResourceName</code></td><td><em>(used for legacy keys)</em></td><td><code>outsales-openai</code></td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>Tip:</strong> Keep this Outputs tab open in a browser tab &mdash; you will reference these values several times throughout setup.
+</div>
+
+<h3>1.4 &nbsp; Get Legacy API Keys (required for some Cloud Flows)</h3>
+<p>Some Cloud Flows in the solution use direct API keys. Get them from the Azure Portal:</p>
+<ol>
+  <li>In your resource group, click the <strong>Speech</strong> resource (<code>{prefix}-speech</code>) &rarr; <strong>Keys and Endpoint</strong> (left sidebar) &rarr; copy <strong>Key 1</strong></li>
+  <li>Go back and click the <strong>OpenAI</strong> resource (<code>{prefix}-openai</code>) &rarr; <strong>Keys and Endpoint</strong> &rarr; copy <strong>Key 1</strong></li>
+</ol>
+<p>Save both keys &mdash; you will enter them as environment variables in Step 4.</p>
+
+<!-- ─── STEP 2 ─── -->
+<h2 id="step2"><span class="step-num">2</span> Deploy the Speech Proxy Code <span class="badge badge-cloud">Cloud Shell</span></h2>
+<p>The ARM template created the Function App infrastructure, but you still need to deploy the actual proxy code. This is done entirely from <strong>Azure Cloud Shell</strong> &mdash; no local tools needed.</p>
+
+<h3>2.1 &nbsp; Open Azure Cloud Shell</h3>
+<ol>
+  <li>In the <a href="https://portal.azure.com" target="_blank">Azure Portal</a>, click the <strong>Cloud Shell</strong> icon (<code>&gt;_</code>) in the top bar</li>
+  <li>Select <strong>Bash</strong> if prompted</li>
+</ol>
+
+<h3>2.2 &nbsp; Clone, Build, and Deploy</h3>
+<p>Run these commands one at a time in Cloud Shell. Replace <code>&lt;functionAppName&gt;</code> and <code>&lt;resourceGroup&gt;</code> with your actual values from Step 1.3.</p>
+
+<pre><code># 1. Clone the repository (one-time)
+git clone https://github.com/billwhalenmsft/Copilot-Studio-Chat-PCF-Control-with-Voice-1.git \
+  --branch pre-entra-v1.3.5 --single-branch --depth 1
+
+# 2. Navigate to the speech proxy folder
+cd Copilot-Studio-Chat-PCF-Control-with-Voice-1/azure-functions/speech-proxy
+
+# 3. Install dependencies and build
+npm install
+npm run build
+
+# 4. Create deployment zip
+zip -r deploy.zip host.json package.json package-lock.json dist/ node_modules/
+
+# 5. Deploy to Azure (replace with YOUR values)
+az functionapp deployment source config-zip \
+  --name "&lt;functionAppName&gt;" \
+  --resource-group "&lt;resourceGroup&gt;" \
+  --src deploy.zip
+
+# 6. Restart the function app
+az functionapp restart \
+  --name "&lt;functionAppName&gt;" \
+  --resource-group "&lt;resourceGroup&gt;"</code></pre>
+
+<div class="callout callout-info">
+  <strong>Example:</strong> If your function app is <code>func-speech-proxy-outsales</code> and resource group is <code>rg-outside-sales-agent</code>:<br>
+  <code style="font-size:0.82em">az functionapp deployment source config-zip --name "func-speech-proxy-outsales" --resource-group "rg-outside-sales-agent" --src deploy.zip</code>
+</div>
+
+<h3>2.3 &nbsp; Verify the Proxy</h3>
+<p>Test the proxy is working (still in Cloud Shell). Replace <code>&lt;speechProxyEndpoint&gt;</code> and <code>&lt;apiKey&gt;</code>:</p>
+<pre><code>curl -X POST "&lt;speechProxyEndpoint&gt;/api/azureTts" \
+  -H "x-api-key: &lt;apiKey&gt;" \
+  -H "Content-Type: application/ssml+xml" \
+  -d '&lt;speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US"&gt;&lt;voice name="en-US-JennyNeural"&gt;Hello&lt;/voice&gt;&lt;/speak&gt;' \
+  -o /dev/null -w "HTTP %{http_code}\n"</code></pre>
+<div class="callout callout-ok">
+  <strong>Success:</strong> If you see <code>HTTP 200</code>, the speech proxy is working. If you get <code>HTTP 401</code>, double-check your API key. If <code>HTTP 500</code>, the RBAC role assignment may still be propagating &mdash; wait 2&ndash;3 minutes and retry.
+</div>
+
+<!-- ─── STEP 3 ─── -->
+<h2 id="step3"><span class="step-num">3</span> Import Power Platform Solution <span class="badge badge-browser">Browser</span></h2>
+<div class="callout callout-info">
+  <strong>One import does it all!</strong> The turnkey solution includes everything &mdash; Canvas App, Copilot Studio Agent, Custom Pages, 22 Cloud Flows, and all PCF Controls (Beta v2.0.9 + GA v2.0.0).
+</div>
+
+<h3>3.1 &nbsp; Import the Solution</h3>
+<ol>
+  <li>Go to <a href="https://make.powerapps.com" target="_blank">make.powerapps.com</a></li>
+  <li>Select your <strong>environment</strong> from the top-right environment picker</li>
+  <li>Click <strong>Solutions</strong> in the left navigation</li>
+  <li>Click <strong>Import solution</strong> in the top toolbar</li>
+  <li>Click <strong>Browse</strong> and select <code>D365MobileCanvasTemplate_1.2.0_turnkey.zip</code> from this deployment package</li>
+  <li>Click <strong>Next</strong></li>
+  <li>On the <strong>Connection References</strong> page, create or select connections for:
+    <ul>
+      <li><strong>Dataverse</strong> &mdash; sign in with your D365 credentials</li>
+      <li><strong>Office 365 Outlook</strong> &mdash; sign in with your email account</li>
+      <li>Any other connectors shown</li>
+    </ul>
+  </li>
+  <li>Click <strong>Import</strong></li>
+  <li>Wait for the import to complete (5&ndash;10 minutes &mdash; you will see a green checkmark)</li>
+</ol>
+
+<div class="callout callout-warn">
+  <strong>Dependency:</strong> This solution requires Dynamics 365 Sales entities (Account, Opportunity, Sales Order). If import fails with missing dependencies, ensure D365 Sales is installed in your environment.
+</div>
+
+<h3>3.2 &nbsp; Verify Import</h3>
+<ol>
+  <li>In <strong>Solutions</strong>, you should see <strong>D365MobileCanvasTemplate</strong> listed</li>
+  <li>Click it to open &mdash; you should see Apps, Bot components, Environment Variables, Cloud Flows, and Controls</li>
+</ol>
+
+<!-- ─── STEP 4 ─── -->
+<h2 id="step4"><span class="step-num">4</span> Configure D365 Environment Variables <span class="badge badge-browser">Browser</span></h2>
+<div class="callout callout-warn">
+  <strong>Critical!</strong> After import, all environment variables are BLANK. The Canvas App reads these at runtime to connect to Azure services and Copilot Studio. You must set them or the app will not function.
+</div>
+
+<h3>4.1 &nbsp; Open Environment Variables</h3>
+<ol>
+  <li>Go to <a href="https://make.powerapps.com" target="_blank">make.powerapps.com</a> &rarr; select your environment</li>
+  <li>Click <strong>Solutions</strong> &rarr; open <strong>D365MobileCanvasTemplate</strong></li>
+  <li>In the left panel, filter by <strong>Environment variables</strong></li>
+  <li>Click each variable, then click <strong>+ New value</strong> (or edit the existing value) to set it</li>
+</ol>
+<div class="callout callout-info">
+  <strong>Shortcut:</strong> You can also set them via the <strong>gear icon</strong> (top right) &rarr; <strong>Session details</strong> &rarr; <strong>Environment variables</strong>, or use Settings &rarr; Administration &rarr; Environment variables.
+</div>
+
+<h3>4.2 &nbsp; Required &mdash; Voice / Speech Proxy</h3>
+<p>These values come from the ARM deployment outputs (Step 1.3):</p>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Value (from ARM output)</th></tr>
+  <tr><td><code>bw_SpeechProxyEndpoint</code></td><td>Speech Proxy Endpoint</td><td><code>https://func-speech-proxy-&lt;prefix&gt;.azurewebsites.net</code></td></tr>
+  <tr><td><code>bw_SpeechProxyApiKey</code></td><td>Speech Proxy API Key</td><td>The API key you generated in Step 1.1</td></tr>
+  <tr><td><code>bw_SpeechRegion</code></td><td>Azure Speech Region</td><td>e.g., <code>eastus</code> (from output <code>speechRegion</code>)</td></tr>
+  <tr><td><code>bw_OpenAIEndpoint</code></td><td>Azure OpenAI Endpoint</td><td><code>https://&lt;prefix&gt;-openai.openai.azure.com/</code></td></tr>
+  <tr><td><code>bw_OpenAIDeployment</code></td><td>Azure OpenAI TTS Deployment</td><td><code>tts</code> (from output <code>openAIDeploymentName</code>)</td></tr>
+</table>
+
+<h3>4.3 &nbsp; Required &mdash; Copilot Studio / Direct Line</h3>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Value</th></tr>
+  <tr><td><code>bw_DirectLineSecret</code></td><td>Direct Line Secret</td><td><strong>Get from Step 5</strong> (Copilot Studio &rarr; Channels &rarr; Web &rarr; Channel Security)</td></tr>
+  <tr><td><code>bw_DirectLineEndpoint</code></td><td>Direct Line Endpoint</td><td><code>https://directline.botframework.com/v3/directline</code></td></tr>
+</table>
+
+<h3>4.4 &nbsp; Required &mdash; Dataverse</h3>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Value</th></tr>
+  <tr><td><code>bw_DATAVERSE_URL</code></td><td>Dataverse URL</td><td><code>https://YOUR-ORG.crm.dynamics.com/</code></td></tr>
+  <tr><td><code>bw_OrganizationName</code></td><td>Organization Name</td><td>Your org display name</td></tr>
+</table>
+
+<h3>4.5 &nbsp; Legacy Keys (required &mdash; some Cloud Flows use these)</h3>
+<p>Get these from the Azure Portal (Step 1.4):</p>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Where to Get</th></tr>
+  <tr><td><code>bw_SpeechKey</code></td><td>Azure Speech Key</td><td>Azure Portal &rarr; <code>{prefix}-speech</code> &rarr; Keys and Endpoint &rarr; Key 1</td></tr>
+  <tr><td><code>bw_OpenAIKey</code></td><td>Azure OpenAI Key</td><td>Azure Portal &rarr; <code>{prefix}-openai</code> &rarr; Keys and Endpoint &rarr; Key 1</td></tr>
+  <tr><td><code>bw_AzureOpenAIDeploymentName</code></td><td>Azure OpenAI Deployment</td><td>The chat model deployment name: <code>gpt-4o-mini</code></td></tr>
+</table>
+
+<h3>4.6 &nbsp; Optional &mdash; Defaults (can leave blank or use suggested values)</h3>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Suggested Value</th></tr>
+  <tr><td><code>bw_EnvironmentType</code></td><td>Env</td><td><code>demo</code></td></tr>
+  <tr><td><code>bw_PrimaryAgent</code></td><td>Primary Agent</td><td><code>CopilotStudio</code></td></tr>
+  <tr><td><code>bw_MaxRetries</code></td><td>Max Retries</td><td><code>3</code></td></tr>
+  <tr><td><code>bw_TimeoutSeconds</code></td><td>Timeout Seconds</td><td><code>30</code></td></tr>
+  <tr><td><code>bw_Copilot_Studio_Timeout</code></td><td>Copilot Studio Timeout</td><td><code>120</code></td></tr>
+  <tr><td><code>bw_EnableA2A</code></td><td>Enable A2A</td><td><code>false</code></td></tr>
+  <tr><td><code>bw_FunctionsBaseURL</code></td><td>Functions Base URL</td><td><em>(leave blank)</em></td></tr>
+  <tr><td><code>bw_COPILOT_STUDIO_ENDPOINT</code></td><td>Copilot Studio Endpoint</td><td><em>(leave blank)</em></td></tr>
+  <tr><td><code>bw_CopilotStudioBotID</code></td><td>Copilot Studio Bot ID</td><td><em>(leave blank)</em></td></tr>
+  <tr><td><code>bw_CopilotStudioTenantID</code></td><td>Copilot Studio Tenant ID</td><td><em>(leave blank)</em></td></tr>
+</table>
+
+<h3>4.7 &nbsp; Optional &mdash; Vision AI (Beta)</h3>
+<p>Only set these if you want camera/vision features:</p>
+<table>
+  <tr><th>Environment Variable</th><th>Display Name</th><th>Value</th></tr>
+  <tr><td><code>bw_VisionEndpoint</code></td><td>Vision API Endpoint</td><td>Azure OpenAI endpoint with GPT-4o Vision</td></tr>
+  <tr><td><code>bw_VisionApiKey</code></td><td>Vision API Key</td><td>API key for the Vision-capable model</td></tr>
+  <tr><td><code>bw_VisionSystemPrompt</code></td><td>Vision System Prompt</td><td>Custom prompt for image analysis</td></tr>
+</table>
+
+<!-- ─── STEP 5 ─── -->
+<h2 id="step5"><span class="step-num">5</span> Configure Copilot Studio Agent <span class="badge badge-browser">Browser</span></h2>
+<p>The Copilot Studio Agent is included in the turnkey solution. After import, get its Direct Line secret and link it to the environment variable.</p>
+
+<ol>
+  <li>Go to <a href="https://copilotstudio.microsoft.com" target="_blank">copilotstudio.microsoft.com</a></li>
+  <li>Select your <strong>environment</strong> from the environment picker (top right)</li>
+  <li>Find the imported agent in the agent list</li>
+  <li>Click the agent to open it &rarr; go to <strong>Settings</strong> (gear icon)</li>
+  <li>Navigate to <strong>Channels</strong> &rarr; <strong>Web</strong></li>
+  <li>Under <strong>Channel Security</strong>, copy the <strong>Direct Line Secret</strong></li>
+  <li>Go back to <a href="https://make.powerapps.com" target="_blank">make.powerapps.com</a> &rarr; <strong>Solutions</strong> &rarr; <strong>D365MobileCanvasTemplate</strong> &rarr; <strong>Environment Variables</strong></li>
+  <li>Set <code>bw_DirectLineSecret</code> to the Direct Line Secret you just copied</li>
+</ol>
+
+<h3>Agent Capabilities (Pre-Built)</h3>
+<ul>
+  <li><strong>Dataverse Actions:</strong> Account lookup, order details, contact search, activity history</li>
+  <li><strong>Cloud Flows:</strong> Email drafting, note creation, adaptive card generation</li>
+  <li><strong>Knowledge:</strong> Connected to D365 Sales data via Dataverse connector</li>
+  <li><strong>Formulas:</strong> Calculated fields for revenue, fulfillment, engagement metrics</li>
+</ul>
+
+<!-- ─── STEP 6 ─── -->
+<h2 id="step6"><span class="step-num">6</span> Launch &amp; Test <span class="badge badge-browser">Browser</span></h2>
+
+<h3>6.1 &nbsp; Open the App</h3>
+<ol>
+  <li>In <a href="https://make.powerapps.com" target="_blank">make.powerapps.com</a>, go to <strong>Apps</strong></li>
+  <li>Find <strong>D365 Mobile Canvas Template</strong></li>
+  <li>Click <strong>Play</strong> (&#9654;) to launch it</li>
+</ol>
+
+<h3>6.2 &nbsp; Test the Agent</h3>
+<p>Try these sample questions in the chat:</p>
+<ul>
+  <li>&ldquo;Show me my top accounts&rdquo;</li>
+  <li>&ldquo;What orders are pending for Contoso?&rdquo;</li>
+  <li>&ldquo;Draft a follow-up email for my last meeting&rdquo;</li>
+</ul>
+
+<h3>6.3 &nbsp; Test Voice</h3>
+<ol>
+  <li>Click the <strong>microphone</strong> icon in the chat control</li>
+  <li>Speak a question &mdash; you should see it transcribed</li>
+  <li>The agent&rsquo;s response should play back in a <strong>natural neural voice</strong> (not robotic)</li>
+</ol>
+<div class="callout callout-ok">
+  <strong>If the voice sounds robotic</strong> (like a browser voice), the speech proxy is not connected. Check that <code>bw_SpeechProxyEndpoint</code> and <code>bw_SpeechProxyApiKey</code> are set correctly in Step 4.
+</div>
+
+<h3>6.4 &nbsp; Publish for Users</h3>
+<ol>
+  <li>In make.powerapps.com &rarr; <strong>Apps</strong> &rarr; click the three dots (<strong>&hellip;</strong>) next to the app &rarr; <strong>Share</strong></li>
+  <li>Add users or security groups</li>
+  <li>Users access the app from <a href="https://apps.powerapps.com" target="_blank">apps.powerapps.com</a> or natively in Dynamics 365</li>
+</ol>
+
+<!-- ─── TROUBLESHOOTING ─── -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3>ARM Deployment Fails</h3>
+<table>
+  <tr><th>Error</th><th>Solution</th></tr>
+  <tr><td><code>QuotaExceeded</code> for TTS model</td><td>Try a different <code>openAILocation</code> (e.g., <code>swedencentral</code>, <code>eastus2</code>)</td></tr>
+  <tr><td><code>ResourceNotFound</code> for model version</td><td>Check model availability in Azure Portal &rarr; OpenAI resource &rarr; Model Deployments</td></tr>
+  <tr><td>Quota for VM types is 0</td><td>For B1/S1 plans, request a quota increase. Y1 (Consumption) does not require VM quota.</td></tr>
+</table>
+
+<h3>Cloud Shell Issues</h3>
+<table>
+  <tr><th>Issue</th><th>Solution</th></tr>
+  <tr><td><code>npm: command not found</code></td><td>Run <code>nvm use 20</code> to activate Node.js 20 in Cloud Shell</td></tr>
+  <tr><td>Zip deploy fails with 403</td><td>Ensure correct subscription: <code>az account show</code>. Switch with <code>az account set --subscription "&lt;id&gt;"</code></td></tr>
+  <tr><td>Cloud Shell times out</td><td>Re-open Cloud Shell and <code>cd</code> back to the speech-proxy directory. Files are preserved in your Azure storage.</td></tr>
+</table>
+
+<h3>Solution Import Fails</h3>
+<table>
+  <tr><th>Error</th><th>Solution</th></tr>
+  <tr><td>Missing dependencies</td><td>Ensure D365 Sales is installed in the environment</td></tr>
+  <tr><td>PCF control not found</td><td>PCF controls are included. Ensure import completed and PCF is enabled (see Prerequisites).</td></tr>
+  <tr><td>Connection reference errors</td><td>Create new connections during import for Dataverse and Office 365 Outlook</td></tr>
+</table>
+
+<h3>Voice Not Working</h3>
+<table>
+  <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+  <tr><td>Robotic / browser voice</td><td>Speech proxy not configured</td><td>Verify <code>bw_SpeechProxyEndpoint</code> and <code>bw_SpeechProxyApiKey</code> env vars</td></tr>
+  <tr><td>TTS 401 error</td><td>Managed identity not authorized</td><td>Check RBAC in Azure Portal &rarr; Speech/OpenAI resource &rarr; Access Control (IAM)</td></tr>
+  <tr><td>No voice output</td><td>Proxy code not deployed</td><td>Complete Step 2 (deploy speech proxy via Cloud Shell)</td></tr>
+  <tr><td>Cold start delay (5&ndash;15s)</td><td>Y1 (Consumption) plan</td><td>Upgrade to B1: Azure Portal &rarr; App Service Plan &rarr; Scale Up</td></tr>
+</table>
+
+<h3>App Errors</h3>
+<table>
+  <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+  <tr><td>&ldquo;This app ran into a problem&rdquo;</td><td>Missing environment variables</td><td>Ensure all required env vars are set (Step 4)</td></tr>
+  <tr><td>Chat control blank / white</td><td>Direct Line connection failed</td><td>Verify <code>bw_DirectLineSecret</code> is valid (Step 5)</td></tr>
+  <tr><td>No adaptive cards</td><td>Cloud Flows disabled</td><td>Open solution &rarr; Cloud Flows &rarr; turn on disabled flows</td></tr>
+</table>
+
+<hr>
+
+<h3>Regional Availability Notes</h3>
+<ul>
+  <li><strong>Azure Speech:</strong> Most regions. <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions" target="_blank">See regions</a></li>
+  <li><strong>Azure OpenAI TTS:</strong> Limited. Confirmed: <code>northcentralus</code>, <code>swedencentral</code>. <a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models" target="_blank">See model availability</a></li>
+  <li><strong>Custom subdomain:</strong> Created automatically by the ARM template (required for managed identity auth)</li>
+</ul>
+
+<!-- ─── ADVANCED ─── -->
+<h2 id="advanced">Advanced &mdash; CLI Alternative</h2>
+<p>If you prefer local tools instead of Cloud Shell, here is the equivalent workflow.</p>
+
+<h3>Local Prerequisites</h3>
+<ul>
+  <li>Azure CLI (<code>az --version</code> &ge; 2.50) &mdash; <a href="https://learn.microsoft.com/en-us/cli/azure/install-azure-cli" target="_blank">Install guide</a></li>
+  <li>Node.js 20 LTS &mdash; <a href="https://nodejs.org/" target="_blank">nodejs.org</a></li>
+  <li>PowerShell 7+ or Windows PowerShell 5.1</li>
+  <li>Power Platform CLI (<code>pac</code>) &mdash; <a href="https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction" target="_blank">Install guide</a></li>
+</ul>
+
+<h3>Deploy ARM Template via CLI (PowerShell)</h3>
+<pre><code># Generate API key
+$apiKey = [guid]::NewGuid().ToString('N').Substring(0, 32)
+
+# Login
+az login
+
+# Create resource group
+az group create --name "rg-outside-sales-agent" --location "eastus"
+
+# Deploy
+az deployment group create `
+  --resource-group "rg-outside-sales-agent" `
+  --template-file azuredeploy.json `
+  --parameters azuredeploy.parameters.json `
+  --parameters resourcePrefix="outsales" functionApiKey="$apiKey"
+
+# Get outputs
+az deployment group show `
+  --resource-group "rg-outside-sales-agent" `
+  --name azuredeploy `
+  --query properties.outputs -o json</code></pre>
+
+<h3>Deploy Speech Proxy via CLI (PowerShell)</h3>
+<pre><code>cd speech-proxy
+npm install
+npm run build
+
+Compress-Archive -Path host.json, package.json, package-lock.json, dist, node_modules `
+  -DestinationPath deploy.zip -Force
+
+az functionapp deployment source config-zip `
+  --name "func-speech-proxy-outsales" `
+  --resource-group "rg-outside-sales-agent" `
+  --src deploy.zip
+
+az functionapp restart --name "func-speech-proxy-outsales" `
+  --resource-group "rg-outside-sales-agent"</code></pre>
+
+<h3>Import Solution via CLI</h3>
+<pre><code># Authenticate to Power Platform
+pac auth create --environment "https://YOUR-ORG.crm.dynamics.com/"
+
+# Import the turnkey solution
+pac solution import `
+  --path D365MobileCanvasTemplate_1.2.0_turnkey.zip `
+  --force-overwrite --publish-changes --async</code></pre>
+
+<div class="footer">
+  <p>For questions or issues, contact <strong>Bill Whalen</strong> (Solution Engineering) &nbsp;|&nbsp; Generated March 2026 (v2.1)</p>
+</div>
+
+</body>
+</html>
+

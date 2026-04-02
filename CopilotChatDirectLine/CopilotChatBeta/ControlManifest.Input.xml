@@ -1,24 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="Copilot" constructor="CopilotStudioChatBeta" version="1.5.7" display-name-key="Copilot Studio Chat Beta" description-key="Beta Testing - Latest features including Driving Mode, Adaptive Cards, Voice (Azure + OpenAI), Attachments, Language Selection, Admin Mode, Entra Auth with Session Persistence" control-type="standard" >
+  <control namespace="Copilot" constructor="CopilotStudioChatBeta" version="2.0.9" display-name-key="Copilot Studio Chat Beta" description-key="Beta Testing - Latest features including Driving Mode, Adaptive Cards, Voice (Azure + OpenAI), Attachments, Language Selection, and Admin Mode" control-type="standard" >
     <!--external-service-usage node declares whether this 3rd party PCF control is using external service or not, if yes, this control will be considered as premium and require corresponding license, Default is false -->
     <external-service-usage enabled="false" />
     
-    <!-- Control Version (visible in properties panel even if control fails to load) -->
-    <property name="ControlVersion" display-name-key="Control Version" description-key="Read-only. Current version: 1.5.7" of-type="SingleLine.Text" usage="input" required="false" default-value="1.5.7" />
-    
-    <!-- Authentication Mode: Enter Direct or Entra -->
-    <property name="AuthMode" display-name-key="AuthMode" description-key="Authentication mode: Direct (use Direct Line secret) or Entra (use Microsoft Entra ID). Default: Direct" of-type="SingleLine.Text" usage="input" required="false" default-value="Direct" />
-    
     <!-- Direct Line Configuration -->
-    <property name="DirectLineSecret" display-name-key="DirectLineSecret" description-key="🔐 SENSITIVE - Direct Line Secret from Copilot Studio (required for Direct auth mode). Recommend using Environment Variables for production." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="DirectLineSecret" display-name-key="DirectLineSecret" description-key="🔐 SENSITIVE - Direct Line Secret from Copilot Studio. Recommend using Environment Variables for production." of-type="SingleLine.Text" usage="input" required="true" />
     <property name="DirectLineEndpoint" display-name-key="DirectLineEndpoint" description-key="Direct Line Endpoint URL" of-type="SingleLine.Text" usage="input" required="false" default-value="https://directline.botframework.com/v3/directline" />
-    
-    <!-- Entra ID Configuration (for Entra auth mode) -->
-    <property name="EntraClientId" display-name-key="EntraClientId" description-key="🔐 Microsoft Entra App Registration Client ID (required for Entra auth mode)" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="EntraTenantId" display-name-key="EntraTenantId" description-key="Microsoft Entra Tenant ID (required for Entra auth mode)" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="EntraScope" display-name-key="EntraScope" description-key="Token scope for Entra authentication (e.g., api://your-client-id/copilot.studio.scope)" of-type="SingleLine.Text" usage="input" required="false" />
-    <property name="BotId" display-name-key="BotId" description-key="Copilot Studio Bot ID (required for Entra auth mode)" of-type="SingleLine.Text" usage="input" required="false" />
     
     <!-- Azure Speech Service Configuration -->
     <property name="SpeechKey" display-name-key="SpeechKey" description-key="🔐 SENSITIVE - Azure Speech Service Key. Recommend using Environment Variables for production." of-type="SingleLine.Text" usage="input" required="false" />
@@ -29,6 +17,10 @@
     <property name="OpenAIKey" display-name-key="OpenAIKey" description-key="🔐 SENSITIVE - Azure OpenAI API Key for TTS. Recommend using Environment Variables for production." of-type="SingleLine.Text" usage="input" required="false" />
     <property name="OpenAIDeployment" display-name-key="OpenAIDeployment" description-key="Azure OpenAI TTS Deployment Name (default: tts)" of-type="SingleLine.Text" usage="input" required="false" default-value="tts" />
     
+    <!-- Speech Proxy (Managed Identity) - use instead of API keys when key access is disabled -->
+    <property name="SpeechProxyEndpoint" display-name-key="SpeechProxyEndpoint" description-key="Azure Function speech proxy URL for managed identity auth (e.g., https://func-speech-proxy.azurewebsites.net). Provides /api/azure-tts and /api/openai-tts endpoints." of-type="SingleLine.Text" usage="input" required="false" />
+    <property name="SpeechProxyApiKey" display-name-key="SpeechProxyApiKey" description-key="🔐 SENSITIVE - API key for the speech proxy Azure Function. Recommend using Environment Variables for production." of-type="SingleLine.Text" usage="input" required="false" />
+    
     <!-- UI Configuration -->
     <property name="ModalTitle" display-name-key="ModalTitle" description-key="Title displayed on the Driving Mode modal (default: Copilot Assistant)" of-type="SingleLine.Text" usage="input" required="false" default-value="Copilot Assistant" />
     <property name="EnableAttachments" display-name-key="EnableAttachments" description-key="Enable file and photo attachments (default: No)" of-type="TwoOptions" usage="input" required="false" default-value="false" />
@@ -37,9 +29,8 @@
     <!-- Language Configuration -->
     <property name="DefaultLanguage" display-name-key="DefaultLanguage" description-key="Default language for speech recognition and synthesis (e.g., en-US, es-CO, es-MX, fr-FR). Leave empty for auto-detection from browser." of-type="SingleLine.Text" usage="input" required="false" default-value="" />
     
-    <!-- Admin/Debug Configuration -->
-    <property name="EnableDebugLog" display-name-key="EnableDebugLog" description-key="Enable admin/debug logging panel (default: Off)" of-type="TwoOptions" usage="input" required="false" default-value="false" />
-    <property name="DebugLogEmail" display-name-key="DebugLogEmail" description-key="Email address for debug log export" of-type="SingleLine.Text" usage="input" required="false" default-value="" />
+    <!-- Version (visible in properties panel) -->
+    <property name="ControlVersion" display-name-key="ControlVersion" description-key="Deployed control version (read-only)" of-type="SingleLine.Text" usage="input" required="false" default-value="2.0.8" />
     
     <!-- Output -->
     <property name="Version" display-name-key="Version" description-key="Control Version (read-only)" of-type="SingleLine.Text" usage="output" />
