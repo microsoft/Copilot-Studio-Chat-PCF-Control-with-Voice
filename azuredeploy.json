@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "2.0.0.0",
   "metadata": {
-    "description": "Deploys Azure AI Speech and Azure OpenAI resources required by the D365 Mobile Canvas Template solution. Provisions speech-to-text/text-to-speech capabilities and an OpenAI model deployment for natural voice output. After deployment, copy the output values into your Dynamics 365 environment variables."
+    "description": "Deploys the full speech proxy stack for Copilot Chat PCF Control with Voice: Azure Speech, Azure OpenAI (with TTS deployment), Function App with managed identity, RBAC role assignments, Storage Account, Application Insights, and App Service Plan."
   },
   "parameters": {
     "resourcePrefix": {
@@ -10,19 +10,19 @@
       "minLength": 3,
       "maxLength": 15,
       "metadata": {
-        "description": "A short, unique name prefix (3-15 lowercase letters/numbers) that identifies your organization or project. This prefix is used to name all Azure resources created by this template. For example, entering 'contoso' will create resources named 'contoso-speech' and 'contoso-openai'. Must be globally unique across Azure."
+        "description": "A unique prefix (3-15 chars, lowercase letters/numbers) used to name all resources. Example: 'outsales' creates 'outsales-speech', 'outsales-openai', 'outsales-proxy', etc."
       }
     },
     "location": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "Azure region where the Speech Services resource will be deployed. Choose a region close to your users for lower latency. Speech Services is available in most Azure regions. Defaults to the same region as your resource group. Common choices: eastus, westus2, westeurope, southeastasia."
+        "description": "Azure region for Speech Services, Function App, and supporting resources. Must support Speech Services."
       }
     },
     "openAILocation": {
       "type": "string",
-      "defaultValue": "eastus2",
+      "defaultValue": "northcentralus",
       "allowedValues": [
         "australiaeast",
         "brazilsouth",
@@ -47,7 +47,7 @@
         "westus3"
       ],
       "metadata": {
-        "description": "Azure region where the OpenAI resource will be deployed. Azure OpenAI is only available in specific regions — the dropdown shows all supported locations. Choose a region that supports the model you selected. Default: eastus2 (supports all models). Note: This can be a different region than Speech Services."
+        "description": "Azure region for OpenAI. Must support Azure OpenAI Service and TTS model deployments."
       }
     },
     "openAIModelName": {
@@ -60,14 +60,14 @@
         "gpt-35-turbo"
       ],
       "metadata": {
-        "description": "The OpenAI model to deploy for text-to-speech and chat capabilities. Options: gpt-4o-mini (RECOMMENDED — most cost-effective, great quality), gpt-4o (highest quality, higher cost), gpt-4 (previous gen), gpt-35-turbo (legacy, lowest cost). The model powers the natural-sounding OpenAI voices (echo, alloy, nova, shimmer, etc.) in the chat control."
+        "description": "The OpenAI chat model to deploy. gpt-4o-mini is recommended for cost-effective general use."
       }
     },
     "openAIModelVersion": {
       "type": "string",
       "defaultValue": "2024-07-18",
       "metadata": {
-        "description": "The specific version of the selected OpenAI model. Leave as default unless you need a specific version. Default '2024-07-18' works with gpt-4o-mini. If you change the model, you may need to update this — check https://learn.microsoft.com/azure/ai-services/openai/concepts/models for available versions per model."
+        "description": "Chat model version. Default '2024-07-18' for gpt-4o-mini."
       }
     },
     "openAIDeploymentCapacity": {
@@ -76,7 +76,34 @@
       "minValue": 1,
       "maxValue": 100,
       "metadata": {
-        "description": "How much capacity to allocate, measured in thousands of tokens per minute (TPM). Default: 10 (= 10,000 TPM) is sufficient for most demos and small teams. For production with many concurrent users, increase to 30-50. Maximum: 100. Higher values may require quota approval. You can adjust this later in the Azure Portal without redeploying."
+        "description": "Chat deployment capacity in thousands of tokens per minute (TPM)."
+      }
+    },
+    "ttsModelName": {
+      "type": "string",
+      "defaultValue": "tts",
+      "allowedValues": [
+        "tts",
+        "tts-hd"
+      ],
+      "metadata": {
+        "description": "OpenAI TTS model to deploy. 'tts' = standard quality, 'tts-hd' = higher quality."
+      }
+    },
+    "ttsModelVersion": {
+      "type": "string",
+      "defaultValue": "001",
+      "metadata": {
+        "description": "TTS model version. Use '001' for current TTS models."
+      }
+    },
+    "ttsDeploymentCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "TTS deployment capacity (requests per minute). TTS quotas are typically low; start with 1."
       }
     },
     "speechServiceSku": {
@@ -87,14 +114,40 @@
         "S0"
       ],
       "metadata": {
-        "description": "Speech Services pricing tier. F0 (Free) = 5 hours of speech-to-text and 0.5M characters of text-to-speech per month — great for testing but limited. S0 (Standard) = pay-as-you-go with no monthly limits — recommended for demos and production. Pricing: ~$1 per hour of STT, ~$16 per 1M characters of neural TTS. See https://azure.microsoft.com/pricing/details/cognitive-services/speech-services/"
+        "description": "Speech Services pricing tier. F0 = Free (limited), S0 = Standard."
+      }
+    },
+    "functionAppSku": {
+      "type": "string",
+      "defaultValue": "Y1",
+      "allowedValues": [
+        "Y1",
+        "B1",
+        "S1"
+      ],
+      "metadata": {
+        "description": "App Service Plan SKU for the Function App. Y1 = Consumption (pay-per-use, cold starts). B1/S1 = dedicated (supports Always On, no cold starts)."
+      }
+    },
+    "functionApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A strong API key used to authenticate client requests to the speech proxy (sent via x-api-key header). Generate with: [guid]::NewGuid().ToString('N').Substring(0,32)"
       }
     }
   },
   "variables": {
     "speechAccountName": "[concat(toLower(parameters('resourcePrefix')), '-speech')]",
     "openAIAccountName": "[concat(toLower(parameters('resourcePrefix')), '-openai')]",
-    "openAIDeploymentName": "[parameters('openAIModelName')]"
+    "openAIDeploymentName": "[parameters('openAIModelName')]",
+    "ttsDeploymentName": "[parameters('ttsModelName')]",
+    "functionAppName": "[concat('func-speech-proxy-', toLower(parameters('resourcePrefix')))]",
+    "appServicePlanName": "[concat(toLower(parameters('resourcePrefix')), '-plan')]",
+    "storageAccountName": "[concat(toLower(replace(parameters('resourcePrefix'), '-', '')), 'stg')]",
+    "appInsightsName": "[concat(toLower(parameters('resourcePrefix')), '-insights')]",
+    "logAnalyticsName": "[concat(toLower(parameters('resourcePrefix')), '-logs')]",
+    "isDedicatedPlan": "[not(equals(parameters('functionAppSku'), 'Y1'))]",
+    "cognitiveServicesUserRoleId": "a97b65f3-24c7-4388-baec-2e87135dc908"
   },
   "resources": [
     {
@@ -152,56 +205,285 @@
         },
         "raiPolicyName": "Microsoft.DefaultV2"
       }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[concat(variables('openAIAccountName'), '/', variables('ttsDeploymentName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openAIAccountName'), variables('openAIDeploymentName'))]"
+      ],
+      "sku": {
+        "name": "Standard",
+        "capacity": "[parameters('ttsDeploymentCapacity')]"
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('ttsModelName')]",
+          "version": "[parameters('ttsModelVersion')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      },
+      "tags": {
+        "solution": "CopilotChatPCF",
+        "component": "Monitoring"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      ],
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      },
+      "tags": {
+        "solution": "CopilotChatPCF",
+        "component": "Monitoring"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false
+      },
+      "tags": {
+        "solution": "CopilotChatPCF",
+        "component": "Storage"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('functionAppSku')]"
+      },
+      "properties": {
+        "reserved": false
+      },
+      "tags": {
+        "solution": "CopilotChatPCF",
+        "component": "Compute"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('speechAccountName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "alwaysOn": "[variables('isDedicatedPlan')]",
+          "minTlsVersion": "1.2",
+          "nodeVersion": "~20",
+          "cors": {
+            "allowedOrigins": [
+              "*"
+            ]
+          },
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(variables('functionAppName'))]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "node"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~20"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "AZURE_SPEECH_REGION",
+              "value": "[parameters('location')]"
+            },
+            {
+              "name": "AZURE_SPEECH_RESOURCE_NAME",
+              "value": "[variables('speechAccountName')]"
+            },
+            {
+              "name": "AZURE_OPENAI_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName')), '2024-10-01').endpoint]"
+            },
+            {
+              "name": "AZURE_OPENAI_DEPLOYMENT",
+              "value": "[variables('ttsDeploymentName')]"
+            },
+            {
+              "name": "FUNCTION_API_KEY",
+              "value": "[parameters('functionApiKey')]"
+            }
+          ]
+        }
+      },
+      "tags": {
+        "solution": "CopilotChatPCF",
+        "component": "SpeechProxy"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', variables('speechAccountName')), variables('functionAppName'), variables('cognitiveServicesUserRoleId'))]",
+      "scope": "[concat('Microsoft.CognitiveServices/accounts/', variables('speechAccountName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('speechAccountName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesUserRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-12-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName')), variables('functionAppName'), variables('cognitiveServicesUserRoleId'))]",
+      "scope": "[concat('Microsoft.CognitiveServices/accounts/', variables('openAIAccountName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesUserRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-12-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
     }
   ],
   "outputs": {
-    "speechKey": {
+    "speechProxyEndpoint": {
       "type": "string",
-      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('speechAccountName')), '2024-10-01').key1]",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-12-01').defaultHostName)]",
       "metadata": {
-        "description": "🔑 SPEECH KEY — Copy this value into the 'bw_SpeechKey' environment variable in your Dynamics 365 environment. This key authenticates speech-to-text and text-to-speech API calls."
+        "description": "Set this as the 'SpeechProxyEndpoint' property on the PCF control in Power Apps."
+      }
+    },
+    "speechProxyApiKey": {
+      "type": "string",
+      "value": "[parameters('functionApiKey')]",
+      "metadata": {
+        "description": "Set this as the 'SpeechProxyApiKey' property on the PCF control in Power Apps."
       }
     },
     "speechRegion": {
       "type": "string",
       "value": "[parameters('location')]",
       "metadata": {
-        "description": "🌍 SPEECH REGION — Copy this value into the 'bw_SpeechRegion' environment variable. This is the Azure region code (e.g., eastus) where your Speech resource was created."
+        "description": "Set this as the 'SpeechRegion' property on the PCF control in Power Apps."
       }
     },
     "openAIEndpoint": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName')), '2024-10-01').endpoint]",
       "metadata": {
-        "description": "🌐 OPENAI ENDPOINT — Copy this full URL into the 'bw_OpenAIEndpoint' environment variable. This is the base URL for all Azure OpenAI API calls (format: https://your-resource.openai.azure.com/)."
-      }
-    },
-    "openAIKey": {
-      "type": "string",
-      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openAIAccountName')), '2024-10-01').key1]",
-      "metadata": {
-        "description": "🔑 OPENAI KEY — Copy this value into the 'bw_OpenAIKey' environment variable. This key authenticates OpenAI API calls for text-to-speech with natural voices."
+        "description": "Set this as the 'OpenAIEndpoint' property on the PCF control in Power Apps."
       }
     },
     "openAIDeploymentName": {
       "type": "string",
-      "value": "[variables('openAIDeploymentName')]",
+      "value": "[variables('ttsDeploymentName')]",
       "metadata": {
-        "description": "📦 OPENAI DEPLOYMENT — Copy this value into the 'bw_OpenAIDeployment' environment variable. This is the name of the model deployment (e.g., gpt-4o-mini) that handles TTS requests."
+        "description": "Set this as the 'OpenAIDeployment' property on the PCF control in Power Apps."
       }
     },
-    "openAIResourceName": {
+    "functionAppName": {
       "type": "string",
-      "value": "[variables('openAIAccountName')]",
+      "value": "[variables('functionAppName')]",
       "metadata": {
-        "description": "ℹ️ FOR REFERENCE — The name of the Azure OpenAI resource created in your subscription. Use this to find the resource in the Azure Portal if you need to manage keys, add deployments, or configure networking."
+        "description": "The Azure Function App name. Deploy the speech-proxy code to this app with: az functionapp deployment source config-zip"
+      }
+    },
+    "functionAppPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-12-01', 'Full').identity.principalId]",
+      "metadata": {
+        "description": "The managed identity principal ID of the Function App (for troubleshooting RBAC)."
       }
     },
     "speechResourceName": {
       "type": "string",
       "value": "[variables('speechAccountName')]",
       "metadata": {
-        "description": "ℹ️ FOR REFERENCE — The name of the Azure Speech Services resource created in your subscription. Use this to find the resource in the Azure Portal if you need to rotate keys or check usage."
+        "description": "The Azure Speech Services resource name (custom domain enabled)."
+      }
+    },
+    "openAIResourceName": {
+      "type": "string",
+      "value": "[variables('openAIAccountName')]",
+      "metadata": {
+        "description": "The Azure OpenAI resource name."
+      }
+    },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[variables('appInsightsName')]",
+      "metadata": {
+        "description": "Application Insights resource for monitoring the speech proxy."
       }
     }
   }

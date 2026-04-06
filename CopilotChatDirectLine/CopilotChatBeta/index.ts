@@ -25,7 +25,7 @@ export class CopilotStudioChatBeta {
     private _container: HTMLDivElement | undefined;
     private _notifyOutputChanged: (() => void) | undefined;
     private _transcript: string = "";
-    private _lastPropsKey: string = "";
+    private _isRendered: boolean = false;
 
     /**
      * Empty constructor.
@@ -50,9 +50,10 @@ export class CopilotStudioChatBeta {
         this._container = container;
         this._notifyOutputChanged = notifyOutputChanged;
 
-        // Ensure the PCF container fills the allocated space in Canvas Apps
-        container.style.width = '100%';
-        container.style.height = '100%';
+        // Ensure container fills its allocated space in the maker portal
+        this._container.style.width = '100%';
+        this._container.style.height = '100%';
+        this._container.style.overflow = 'hidden';
 
         // Request full container dimensions from the framework
         context.mode.trackContainerResize(true);
@@ -63,18 +64,6 @@ export class CopilotStudioChatBeta {
      * @param context The entire property bag available to control via Context Object
      */
     updateView(context: Context<ControlProps>): void {
-        // Skip redundant renders when raw prop values haven't changed
-        const p = context.parameters;
-        const propsKey = [
-            p.AuthMode?.raw, p.DirectLineSecret?.raw?.substring(0, 10),
-            p.DirectLineEndpoint?.raw, p.EntraClientId?.raw?.substring(0, 10),
-            p.EntraTenantId?.raw, p.EntraScope?.raw, p.BotId?.raw
-        ].join('|');
-        if (propsKey === this._lastPropsKey) {
-            return;
-        }
-        this._lastPropsKey = propsKey;
-
         const props = {
             callback: (transcript: string) => {
                 this._transcript = transcript;
@@ -84,10 +73,19 @@ export class CopilotStudioChatBeta {
             ...context.parameters
         };
         
-        ReactDOM.render(
-            React.createElement(Control, props) as unknown as React.ReactElement,
-            this._container as HTMLElement
-        );
+        if (this._isRendered) {
+            // Re-render in place — React reconciles without remounting
+            ReactDOM.render(
+                React.createElement(Control, props) as unknown as React.ReactElement,
+                this._container as HTMLElement
+            );
+        } else {
+            ReactDOM.render(
+                React.createElement(Control, props) as unknown as React.ReactElement,
+                this._container as HTMLElement
+            );
+            this._isRendered = true;
+        }
     }
 
     /**
@@ -96,7 +94,7 @@ export class CopilotStudioChatBeta {
      */
     getOutputs(): IOutputs {
         return {
-            Version: "1.5.7"
+            Version: "2.0.9"
         };
     }
 

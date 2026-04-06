@@ -1,6 +1,6 @@
 ﻿/**
  * CopilotChatGA - PCF Standard Control Entry Point
- * Stable v1.2.8 release
+ * GA v2.0.0 release
  */
 
 import Control, { ControlProps } from './src/Control';
@@ -25,6 +25,7 @@ export class CopilotStudioChatGA {
     private _container: HTMLDivElement | undefined;
     private _notifyOutputChanged: (() => void) | undefined;
     private _transcript: string = "";
+    private _isRendered: boolean = false;
 
     /**
      * Empty constructor.
@@ -48,6 +49,12 @@ export class CopilotStudioChatGA {
     ): void {
         this._container = container;
         this._notifyOutputChanged = notifyOutputChanged;
+
+        // Ensure container fills its allocated space in the maker portal
+        this._container.style.width = '100%';
+        this._container.style.height = '100%';
+        this._container.style.overflow = 'hidden';
+
         // Request full container dimensions from the framework
         context.mode.trackContainerResize(true);
     }
@@ -66,10 +73,19 @@ export class CopilotStudioChatGA {
             ...context.parameters
         };
         
-        ReactDOM.render(
-            React.createElement(Control, props) as unknown as React.ReactElement,
-            this._container as HTMLElement
-        );
+        if (this._isRendered) {
+            // Re-render in place — React reconciles without remounting
+            ReactDOM.render(
+                React.createElement(Control, props) as unknown as React.ReactElement,
+                this._container as HTMLElement
+            );
+        } else {
+            ReactDOM.render(
+                React.createElement(Control, props) as unknown as React.ReactElement,
+                this._container as HTMLElement
+            );
+            this._isRendered = true;
+        }
     }
 
     /**
@@ -78,7 +94,7 @@ export class CopilotStudioChatGA {
      */
     getOutputs(): IOutputs {
         return {
-            Version: "1.4.0"
+            Version: "2.0.0"
         };
     }
 

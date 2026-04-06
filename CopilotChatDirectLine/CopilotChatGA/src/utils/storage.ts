@@ -18,6 +18,8 @@ export interface ChatSettings {
     // Multi-lingual settings
     language: string;       // BCP-47 language code (e.g., 'en-US', 'es-CO')
     voiceId: string;        // Azure Neural voice ID (e.g., 'es-CO-SalomeNeural')
+    // Admin/Debug mode
+    adminMode: boolean;     // Enable debug logging panel from Settings
 }
 
 // Stored message interface (with serialized dates)
@@ -48,6 +50,8 @@ const DEFAULT_SETTINGS: ChatSettings = {
     // Multi-lingual defaults (empty means auto-detect)
     language: '',              // Will auto-detect from browser
     voiceId: '',               // Will use default voice for language
+    // Admin/Debug mode
+    adminMode: false,          // Disabled by default
 };
 
 // Conversation expiration time (30 minutes) - DirectLine tokens typically last longer,

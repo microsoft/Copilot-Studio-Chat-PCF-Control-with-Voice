@@ -436,3 +436,12 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Temporary deploy artifacts and working files
+OutsideSalesAgent-DeployPackage*.zip
+deploy-package-temp2/
+scripts/importjob_*.xml
+TokenExchangeFunction/deploy-speech.zip
+azure-functions/speech-proxy/deploy.zip
+
+scripts/

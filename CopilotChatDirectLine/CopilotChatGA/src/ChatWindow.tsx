@@ -11,7 +11,6 @@ import { useAttachments, Attachment } from './useAttachments';
 import AttachmentPreview from './AttachmentPreview';
 import AdaptiveCardRenderer, { CardAction } from './AdaptiveCardRenderer';
 import DrivingModeModal from './DrivingModeModal';
-import useDebugLog, { DebugPanel } from './useDebugLog';
 import {
     saveSettings,
     loadSettings,
@@ -22,6 +21,7 @@ import {
     StoredMessage
 } from './utils/storage';
 import { CopilotChatService } from './services/CopilotChatService';
+import { useDebugLog, DebugPanel } from './useDebugLog';
 import {
     SUPPORTED_LANGUAGES,
     getLanguageByCode,
@@ -88,13 +88,18 @@ export interface ChatWindowProps {
     openAIEndpoint?: string;
     openAIKey?: string;
     openAIDeployment?: string;
+    entraTenantId?: string;
+    entraClientId?: string;
+    entraClientSecret?: string;
+    speechProxyEndpoint?: string;
+    speechProxyApiKey?: string;
     isReconnected?: boolean;
     modalTitle?: string;
     enableAttachments?: boolean;
     attachmentIcon?: 'paperclip' | 'camera' | 'document' | 'plus';
     defaultLanguage?: string;  // Admin-configured default language
-    enableDebugLog?: boolean;  // Enable in-app debug logging
-    debugLogEmail?: string;    // Email address to send debug logs
+    enableDebugLog?: boolean;  // Enable debug logging panel
+    debugLogEmail?: string;    // Email address for debug logs
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -104,6 +109,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     openAIEndpoint,
     openAIKey,
     openAIDeployment = 'tts',
+    entraTenantId,
+    entraClientId,
+    entraClientSecret,
+    speechProxyEndpoint,
+    speechProxyApiKey,
     isReconnected = false,
     modalTitle,
     enableAttachments = false,
@@ -160,10 +170,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const [selectedLanguage, setSelectedLanguage] = React.useState(initialLanguage);
     const [selectedVoiceId, setSelectedVoiceId] = React.useState(initialVoiceId);
 
+    // Admin Mode state - can be enabled by admin prop OR user toggle in settings
+    const [adminModeEnabled, setAdminModeEnabled] = React.useState(
+        savedSettings.adminMode || enableDebugLog
+    );
+
     // Debug logging state
     const [showDebugPanel, setShowDebugPanel] = React.useState(false);
     const debugLog = useDebugLog({
-        enabled: enableDebugLog,
+        enabled: adminModeEnabled,
         emailAddress: debugLogEmail,
         maxEntries: 500
     });
@@ -177,18 +192,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const spokenMessageIds = React.useRef(new Set<string>());
     const isSpeakingRef = React.useRef(false);
     const cancelSpeechRef = React.useRef(false);
-    // Track intentional mic stops to prevent auto-restart cycling
-    const intentionalStopRef = React.useRef(false);
-    const lastMicStopTimeRef = React.useRef(0);
-    const micRestartCooldownMs = 1500; // Minimum time between mic restarts
 
     // Detect if running on iOS/mobile
     const isMobile = React.useMemo(() => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent), []);
     const isIOS = React.useMemo(() => /iPhone|iPad|iPod/i.test(navigator.userAgent), []);
 
     // Check which speech providers are configured
-    const hasAzureSpeech = !!(speechKey && speechRegion);
-    const hasOpenAI = !!(openAIEndpoint && openAIKey);
+    const hasEntraAuth = !!(entraTenantId && entraClientId && entraClientSecret);
+    const hasProxy = !!speechProxyEndpoint;
+    const hasAzureSpeech = !!(hasProxy || hasEntraAuth || (speechKey && speechRegion));
+    const hasOpenAI = !!(hasProxy || hasEntraAuth || (openAIEndpoint && openAIKey));
     const availableVoices = React.useMemo(
         () => getAvailableVoices(hasAzureSpeech, hasOpenAI),
         [hasAzureSpeech, hasOpenAI]
@@ -200,6 +213,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         openAIEndpoint,
         openAIKey,
         openAIDeployment,
+        entraTenantId,
+        entraClientId,
+        entraClientSecret,
+        speechProxyEndpoint,
+        speechProxyApiKey,
         voiceProfile,
         audioUnlocked,
         language: selectedLanguage,
@@ -256,9 +274,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             audioUnlocked,
             thinkingSoundEnabled,
             language: selectedLanguage,
-            voiceId: selectedVoiceId
+            voiceId: selectedVoiceId,
+            adminMode: adminModeEnabled
         });
-    }, [isMuted, voiceProfile, audioUnlocked, thinkingSoundEnabled, selectedLanguage, selectedVoiceId]);
+    }, [isMuted, voiceProfile, audioUnlocked, thinkingSoundEnabled, selectedLanguage, selectedVoiceId, adminModeEnabled]);
 
     // Save messages when they change
     React.useEffect(() => {
@@ -288,7 +307,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     React.useEffect(() => {
         if (drivingMode && isPlaying && recognitionRef.current) {
             console.log('🎤🛑 Driving mode: isPlaying=true, force-stopping mic to prevent interruption');
-            intentionalStopRef.current = true; // Mark as intentional stop
             try {
                 recognitionRef.current.stop();
             } catch (e) {
@@ -300,30 +318,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 clearTimeout(autoSendTimerRef.current);
                 autoSendTimerRef.current = null;
             }
-        } else if (drivingMode && !isPlaying && !isSending && !isTyping) {
-            // Bot finished speaking, allow auto-restart
-            intentionalStopRef.current = false;
         }
-    }, [drivingMode, isPlaying, isSending, isTyping]);
+    }, [drivingMode, isPlaying]);
 
     // Auto-start listening when driving mode is enabled and not busy
     React.useEffect(() => {
         if (drivingMode && !isListening && !isPlaying && !isSending && !isTyping && recognitionRef.current) {
-            // Check if we intentionally stopped - don't auto-restart
-            if (intentionalStopRef.current) {
-                console.log('🚗 Driving mode: Mic was intentionally stopped, skipping auto-restart');
-                return undefined;
-            }
-            
-            // Check cooldown period to prevent rapid cycling
-            const timeSinceLastStop = Date.now() - lastMicStopTimeRef.current;
-            const delayNeeded = Math.max(micRestartCooldownMs - timeSinceLastStop, 500);
-            
-            console.log(`🚗 Driving mode: Will auto-restart mic in ${delayNeeded}ms`);
-            
             const startTimer = setTimeout(() => {
-                // Re-check all conditions including intentional stop
-                if (drivingMode && !isListening && !isPlaying && !isSending && !isTyping && !intentionalStopRef.current) {
+                if (drivingMode && !isListening && !isPlaying && !isSending && !isTyping) {
                     console.log('🚗 Driving mode: Auto-starting mic...');
                     try {
                         setTranscribedText('');
@@ -333,7 +335,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         console.log('🚗 Mic already active or unavailable');
                     }
                 }
-            }, delayNeeded);
+            }, 500);
             return () => clearTimeout(startTimer);
         }
         return undefined;
@@ -497,7 +499,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                             try {
                                 if (drivingMode && recognitionRef.current) {
                                     console.log('🎤🔇 Driving mode: Stopping mic while bot speaks to prevent interruption');
-                                    intentionalStopRef.current = true;
                                     try {
                                         recognitionRef.current.stop();
                                     } catch (e) {
@@ -597,7 +598,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
                         autoSendTimerRef.current = setTimeout(() => {
                             console.log('🚗 Driving mode: Auto-sending message:', transcript);
-                            intentionalStopRef.current = true; // Stop mic while sending/waiting for response
                             if (recognitionRef.current) {
                                 try {
                                     recognitionRef.current.stop();
@@ -625,19 +625,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
             recognitionRef.current.onerror = (event: any) => {
                 console.error('Speech recognition error:', event.error);
-                lastMicStopTimeRef.current = Date.now();
                 setIsListening(false);
                 setTranscribedText('');
-                // Don't auto-restart on certain errors
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    intentionalStopRef.current = true;
-                    console.log('🎤 Mic permission denied, disabling auto-restart');
-                }
             };
 
             recognitionRef.current.onend = () => {
-                console.log('🎤 Speech recognition ended');
-                lastMicStopTimeRef.current = Date.now();
                 setIsListening(false);
                 if (!drivingMode) {
                     setTranscribedText('');
@@ -752,10 +744,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         }
 
         if (isListening) {
-            // User manually stopped - mark as intentional in driving mode to prevent auto-restart
-            if (drivingMode) {
-                intentionalStopRef.current = true;
-            }
             recognitionRef.current.stop();
             setIsListening(false);
             setTranscribedText('');
@@ -763,8 +751,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 clearTimeout(autoSendTimerRef.current);
             }
         } else {
-            // User manually started - clear intentional stop flag
-            intentionalStopRef.current = false;
             setTranscribedText('');
             setLastUserInput('');
             recognitionRef.current.start();
@@ -777,7 +763,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             alert('Speech recognition not supported in this browser');
             return;
         }
-        intentionalStopRef.current = false; // Clear flag when starting driving mode
         setTranscribedText('');
         setLastUserInput('');
         recognitionRef.current.start();
@@ -1434,7 +1419,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 </button>
 
                 {/* Debug Log Button - only shown when debug is enabled */}
-                {enableDebugLog && (
+                {adminModeEnabled && (
                     <button
                         onClick={() => setShowDebugPanel(true)}
                         style={{
@@ -1638,7 +1623,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                     fontWeight: '400'
                                 }}
                             >
-                                v1.2.8 Beta
+                                v2.0.6 Beta
                             </span>
                         </div>
 
@@ -1991,12 +1976,46 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                 Always-on voice - mic auto-activates when not playing
                             </p>
                         </div>
+
+                        {/* Admin Mode Toggle */}
+                        <div style={{ marginBottom: '10px' }}>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    fontSize: '14px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={adminModeEnabled}
+                                    onChange={() => setAdminModeEnabled(!adminModeEnabled)}
+                                    style={{
+                                        marginRight: '8px',
+                                        width: '18px',
+                                        height: '18px',
+                                        cursor: 'pointer'
+                                    }}
+                                />
+                                <span style={{ fontWeight: '600', color: '#323130' }}>🛠️ Admin Mode</span>
+                            </label>
+                            <p
+                                style={{
+                                    margin: '4px 0 0 26px',
+                                    fontSize: '12px',
+                                    color: '#605e5c'
+                                }}
+                            >
+                                Enable debug logging panel for troubleshooting
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Debug Panel */}
-            {showDebugPanel && enableDebugLog && (
+            {showDebugPanel && adminModeEnabled && (
                 <DebugPanel
                     logs={debugLog.logs}
                     onClose={() => setShowDebugPanel(false)}
